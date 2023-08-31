@@ -12,6 +12,7 @@ python = "^3.11"
 openai = "^0.27.10"
 arxiv = "^1.4.8"
 markdown = "^3.4.4"
+python-markdown-math = "^0.8"
 
 
 [build-system]
