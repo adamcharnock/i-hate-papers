@@ -18,3 +18,6 @@ python-markdown-math = "^0.8"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+i_hate_papers = 'i_hate_papers.main:main'

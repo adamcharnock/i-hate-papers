@@ -4,8 +4,9 @@ from tarfile import TarInfo
 
 import arxiv
 
+from i_hate_papers.settings import CACHE_DIR
+
 PATH = "src/arXiv_src_{id1}_{id2}.tar"
-CACHE_DIR = Path("~/.cache").expanduser() / "i-hate-papers"
 
 
 def download_paper(arxiv_id: str, force=False) -> Path:

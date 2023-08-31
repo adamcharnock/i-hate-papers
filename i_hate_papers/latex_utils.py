@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 
-def process_latex_content(content: str, split_at="section"):
+def process_latex_content(content: str, split_at="section") -> (str, list[str]):
     """Extract sections from latex file.
 
     This function takes in the path to a latex file and processes it. The function reads the file, removes all the latex commands, comments, and align environment. Then, it splits the file at the given 'split_at' command (default = "section") and returns a dictionary with the title of the split as the key and the text as the value.
@@ -12,6 +12,12 @@ def process_latex_content(content: str, split_at="section"):
     tmp_data = raw_data
     tmp_data = tmp_data[: tmp_data.find("\n\\appendix")]
     tmp_data = tmp_data[: tmp_data.find("\n\\end{document}")]
+
+    title_matches = re.search(r"\\title\{([^}]*)\}", raw_data)
+    if title_matches:
+        title = title_matches.group(1)
+    else:
+        title = "[Unknown Title]"
 
     tmp_data = re.sub(r"\\cite\{([^}]*)\}", "", tmp_data)
     tmp_data = re.sub(r"\\label\{([^}]*)\}", "", tmp_data)
@@ -47,4 +53,4 @@ def process_latex_content(content: str, split_at="section"):
 
         sections[section_title] = section_text
 
-    return sections
+    return title, sections
