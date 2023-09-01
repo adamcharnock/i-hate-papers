@@ -31,7 +31,21 @@ def main():
         action="store_true",
         help="Don't open the HTML file when complete (macOS only)",
     )
+    parser.add_argument(
+        "--detail-level",
+        type=int,
+        default=1,
+        help="How detailed should the summary be? (0 = minimal detail, 1 = normal, 2 = more detail)",
+    )
+    parser.add_argument(
+        "--model",
+        default="gpt-3.5-turbo",
+        help="What model be used to generate the summaries ()",
+    )
+    # TODO: No-cache parameter
     args = parser.parse_args()
+
+    assert args.detail_level in [0, 1, 2], "Invalid value for --detail-level"
 
     # Setup logging
     if args.verbose:
@@ -64,25 +78,33 @@ def main():
 
     for section_title, section_content in sections.items():
         logger.info(f"Summarising: {section_title}")
-        output_markdown += f"## {section_title}\n\n"
-        output_markdown += summarise_latex(section_title, section_content) + "\n\n"
+        output_markdown += summarise_latex(
+            section_title,
+            section_content,
+            detail_level=args.detail_level,
+            model=args.model,
+        )
 
     # TODO: Add markdown footer with metadata
+    file_name = f"summary-{arxiv_id}-d{args.detail_level}-{args.model}"
 
     # Write out the markdown
-    md_path = Path(f"summary-{arxiv_id}.md")
+    md_path = Path(f"{file_name}.md")
     md_path.write_text(output_markdown)
+
+    logger.info(f"Written markdown to: {md_path}")
 
     # Render HTML from markdown and write it out
     if not args.no_html:
         import markdown
 
-        html_path = Path(f"summary-{arxiv_id}.html")
+        html_path = Path(f"{file_name}.html")
         md = markdown.Markdown(
             extensions=["mdx_math"],
             extension_configs={"mdx_math": {"enable_dollar_delimiter": True}},
         )
-        html_path.write_text(HTML % md.convert(md_path.read_text()))
+        html_path.write_text(HTML % md.convert(output_markdown))
+        logger.info(f"Written HTML to: {html_path}")
         if not args.no_open and platform.system() == "Darwin":
             os.system(f"open {html_path}")
 
