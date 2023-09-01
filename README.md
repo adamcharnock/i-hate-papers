@@ -49,3 +49,12 @@ academic research.
       --detail-level {0,1,2}
                             How detailed should the summary be? (0 = minimal detail, 1 = normal, 2 = more detail)
       --model MODEL         What model to use to generate the summaries
+
+# Release process
+
+For internal use:
+
+    export VERSION=0.1.0 
+    git tag "v$VERSION"      
+    git push origin  refs/tags/v$VERSION
+    poetry publish --build
