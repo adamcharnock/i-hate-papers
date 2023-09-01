@@ -1,13 +1,16 @@
+import logging
 from hashlib import sha1
 
 import openai
 
 from i_hate_papers.settings import CACHE_DIR
 
+logger = logging.getLogger(__name__)
+
 
 def openai_request(question, text, temperature, model):
     """Sends a request to a openai large language model."""
-    response = openai.ChatCompletion.create(
+    kwargs = dict(
         model=model,
         messages=[
             # {"role": "system", "content": "You are a helpful assistant."},
@@ -20,11 +23,13 @@ def openai_request(question, text, temperature, model):
         presence_penalty=0.0,
         timeout=5,
     )
+    logger.debug(f"Calling ChatCompletion API: {kwargs=}")
+    response = openai.ChatCompletion.create(**kwargs)
     return response["choices"][0]["message"]["content"].strip()
 
 
 def summarise_latex(
-    title: str, content: str, detail_level: int, force=False, model="gpt-3.5-turbo"
+    content: str, detail_level: int, force=False, model="gpt-3.5-turbo"
 ):
     detail_request = {
         0: "Assume the reader has no grasp of the subject. Do not go into detail, simplify advanced terminology. ",
@@ -40,14 +45,17 @@ def summarise_latex(
     cache_path.parent.mkdir(exist_ok=True, parents=True)
 
     if cache_path.exists() and not force:
+        logger.debug(f"Summary found in cache: {cache_path}")
         return cache_path.read_text("utf8")
 
+    logger.debug(
+        f"Summary not found in cache. Will summarise and store in cache at: {cache_path}"
+    )
     response = openai_request(
         prompt,
         content,
         temperature=temperature,
         model=model,
     )
-    summary = f"## {title}\n\n{response}\n\n"
-    cache_path.write_text(summary, "utf8")
-    return summary
+    cache_path.write_text(response, "utf8")
+    return response

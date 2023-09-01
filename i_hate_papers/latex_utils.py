@@ -6,6 +6,8 @@ def process_latex_content(content: str, split_at="section") -> (str, list[str]):
     """Extract sections from latex file.
 
     This function takes in the path to a latex file and processes it. The function reads the file, removes all the latex commands, comments, and align environment. Then, it splits the file at the given 'split_at' command (default = "section") and returns a dictionary with the title of the split as the key and the text as the value.
+
+    Credit to: https://github.com/fjosw/sumtex
     """
     raw_data = content
 
