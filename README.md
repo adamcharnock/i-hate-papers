@@ -54,7 +54,8 @@ academic research.
 
 For internal use:
 
-    export VERSION=0.1.0 
-    git tag "v$VERSION"      
+    export VERSION=0.1.1
+    poetry version $VERSION
+    git tag "v$VERSION"
     git push origin  refs/tags/v$VERSION
     poetry publish --build
