@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import platform
+import re
 from pathlib import Path
 
 from i_hate_papers.arxiv_utils import get_file_list, get_file_content
@@ -13,14 +14,54 @@ logger = logging.getLogger(__name__)
 
 def main():
     # Argument parsing
-    parser = argparse.ArgumentParser(description=("Summarise an arXiv paper"))
-    parser.add_argument("ARXIV_ID", help="arXiv paper ID (example: 1234.56789)")
+    args = _parse_args()
+
+    # Setup logging
+    _setup_logging(verbosity=args.verbosity)
+
+    input_ = args.INPUT
+
+    # Get the input file content, and some kind of file identifier
+    input_id, content = _get_input_content(
+        input_=input_,
+        no_input=args.no_input,
+    )
+
+    # Summarise it
+    output_markdown = _summarise_content(
+        content=content,
+        detail_level=args.detail_level,
+        model=args.model,
+    )
+
+    # Write the output
+    file_name = f"summary-{input_id}-d{args.detail_level}-{args.model}"
+    _write_output(
+        output_markdown=output_markdown,
+        file_name=file_name,
+        make_html=not args.no_html,
+        open_html=not args.no_open,
+    )
+
+
+def _parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Summarise an arXiv paper\n\n"
+            "You must set the OPENAI_API_KEY environment variable using your OpenAi.com API key"
+        ),
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+
+    parser.add_argument(
+        "INPUT", help="arXiv paper ID (example: 1234.56789) or path to a .tex file"
+    )
     parser.add_argument(
         "--verbosity",
         type=int,
-        default=0,
+        default=1,
         choices=[0, 1, 2],
-        help="Set the logging verbosity (0 = quiet, 1 = info logging, 2 = debug logging)",
+        help="Set the logging verbosity (0 = quiet, 1 = info logging, 2 = debug logging). Default is 1",
     )
     parser.add_argument(
         "--no-input",
@@ -45,50 +86,39 @@ def main():
     parser.add_argument(
         "--model",
         default="gpt-3.5-turbo",
-        help="What model be used to generate the summaries ()",
+        help="What model to use to generate the summaries",
     )
     # TODO: No-cache parameter
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Setup logging
+
+def _setup_logging(verbosity):
     log_level = {
         0: logging.ERROR,
         1: logging.INFO,
         2: logging.DEBUG,
-    }.get(args.verbosity)
+    }.get(verbosity)
 
     logging.basicConfig(
         format="%(name)-30s [%(levelname)-8s] %(message)s", level=log_level
     )
 
-    arxiv_id = args.ARXIV_ID
 
-    # Get the input file content
-    content = _get_input_content(
-        arxiv_id=arxiv_id,
-        no_input=args.no_input,
-    )
+def _get_input_content(input_: str, no_input: bool) -> tuple[str, str]:
+    # Get a list of source files for this paper from arXiv (or from a tex file)
 
-    # Summarise it
-    output_markdown = _summarise_content(
-        content=content,
-        detail_level=args.detail_level,
-        model=args.model,
-    )
+    # If this isn't an arXiv then assume it is a path to a .tex file
+    if not re.match(r"\d+\.\d+", input_):
+        logger.debug(
+            f"Input '{input_}' isn't an arXiv ID. Assuming it is a latex file, will read from disk"
+        )
+        path = Path(input_)
+        return path.stem, path.read_text(encoding="utf8")
 
-    # Write the output
-    file_name = f"summary-{arxiv_id}-d{args.detail_level}-{args.model}"
-    _write_output(
-        output_markdown=output_markdown,
-        file_name=file_name,
-        make_html=not args.no_html,
-        open_html=not args.no_open,
-    )
+    # Ok, it is a paper ID
+    arxiv_id = input_
 
-
-def _get_input_content(arxiv_id, no_input):
-    # Get a list of source files for this paper from arXiv
-    logger.debug(f"Getting input content. {arxiv_id=} {no_input=}")
+    logger.debug(f"Getting input content from arXiv. {arxiv_id=} {no_input=}")
 
     files = get_file_list(arxiv_id)
     logger.debug(f"Got a list of {len(files)} files")
@@ -106,10 +136,10 @@ def _get_input_content(arxiv_id, no_input):
     # Return the file content
     file_name, _ = files[selected_file]
     logger.debug(f"Getting content for file {file_name}")
-    return get_file_content(arxiv_id, file_name)
+    return arxiv_id, get_file_content(arxiv_id, file_name)
 
 
-def _summarise_content(content, detail_level, model):
+def _summarise_content(content: str, detail_level: int, model: str) -> str:
     """Summarise the content using ChatGPT"""
     # Parse the tex content into sections
     logger.debug(
@@ -141,7 +171,9 @@ def _summarise_content(content, detail_level, model):
     return output_markdown
 
 
-def _write_output(output_markdown, file_name, make_html, open_html):
+def _write_output(
+    output_markdown: str, file_name: str, make_html: bool, open_html: bool
+):
     """Write the output markdown to a file and render the HTML"""
     logger.debug(f"Writing output {file_name=}, {make_html=}, {open_html=}")
 
