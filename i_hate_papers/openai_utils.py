@@ -2,6 +2,7 @@ import logging
 from hashlib import sha1
 
 import openai
+from openai import InvalidRequestError
 
 from i_hate_papers.settings import CACHE_DIR
 
@@ -23,8 +24,15 @@ def openai_request(question, text, temperature, model):
         timeout=5,
     )
     logger.debug(f"Calling ChatCompletion API: {kwargs=}")
-    response = openai.ChatCompletion.create(**kwargs)
-    return response["choices"][0]["message"]["content"].strip()
+    try:
+        response = openai.ChatCompletion.create(**kwargs)
+        return response["choices"][0]["message"]["content"].strip()
+    except InvalidRequestError as e:
+        if e.error.code == "context_length_exceeded":
+            logger.error(f"Failed to summarise some content: {e.error.message}")
+            return "Content too large, failed to summarise"
+        else:
+            raise
 
 
 def summarise_latex(

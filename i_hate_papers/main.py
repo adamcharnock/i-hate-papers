@@ -10,6 +10,7 @@ from html2text import html2text
 from i_hate_papers.arxiv_utils import get_file_list, get_file_content
 from i_hate_papers.html_utils import process_html_content
 from i_hate_papers.latex_utils import process_latex_content
+from i_hate_papers.markdown_utils import process_markdown_content
 from i_hate_papers.openai_utils import summarise_latex, extract_glossary
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,8 @@ def _parse_args():
     )
 
     parser.add_argument(
-        "INPUT", help="arXiv paper ID (example: 1234.56789) or path to a .tex file"
+        "INPUT",
+        help="arXiv paper ID (example: 1234.56789) or path to a .tex/.html/.md file",
     )
     parser.add_argument(
         "--verbosity",
@@ -131,8 +133,10 @@ def _get_input_content(input_: str, no_input: bool) -> tuple[str, str, str]:
 
         if path.suffix == ".html":
             return path.stem, "html", path.read_text(encoding="utf8")
-        elif path.suffix == ".md":
+        elif path.suffix == ".tex":
             return path.stem, "latex", path.read_text(encoding="utf8")
+        elif path.suffix == ".md":
+            return path.stem, "markdown", path.read_text(encoding="utf8")
         else:
             raise Exception(f"Unknown file type: {path.suffix}")
 
@@ -170,6 +174,8 @@ def _parse_input_content(
         title, sections = process_latex_content(content)
     elif content_format == "html":
         title, sections = process_html_content(content)
+    elif content_format == "markdown":
+        title, sections = process_markdown_content(content)
     else:
         raise Exception(f"Unknown content format: {content_format}")
 

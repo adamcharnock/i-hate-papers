@@ -11,6 +11,7 @@ Currently works with:
 
 * An arXiv paper ID
 * A local `.tex` file
+* A local `.md` file
 * A local `.html` file (experimental)
 
 # Installation
@@ -47,7 +48,7 @@ Currently works with:
     You must set the OPENAI_API_KEY environment variable using your OpenAi.com API key
     
     positional arguments:
-      INPUT                 arXiv paper ID (example: 1234.56789), or path to a .tex or .html file
+      INPUT                 arXiv paper ID (example: 1234.56789) or path to a .tex/.html/.md file
     
     options:
       -h, --help            show this help message and exit
