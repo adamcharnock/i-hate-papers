@@ -356,6 +356,17 @@ files = [
 ]
 
 [[package]]
+name = "html2text"
+version = "2020.1.16"
+description = "Turn HTML into equivalent Markdown-structured text."
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "html2text-2020.1.16-py3-none-any.whl", hash = "sha256:c7c629882da0cf377d66f073329ccf34a12ed2adf0169b9285ae4e63ef54c82b"},
+    {file = "html2text-2020.1.16.tar.gz", hash = "sha256:e296318e16b059ddb97f7a8a1d6a5c1d7af4544049a01e261731d2d5cc277bbb"},
+]
+
+[[package]]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -695,4 +706,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "becb5e2a87f470ebe06499434efad8d57a25d6145ffeee691adf445faf6be30c"
+content-hash = "ec10be12514875766ffa032d609121bc44fdc5c4cd945e4ce619f3ed9e5c6cfc"

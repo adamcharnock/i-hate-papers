@@ -29,7 +29,11 @@ def openai_request(question, text, temperature, model):
 
 
 def summarise_latex(
-    content: str, detail_level: int, force=False, model="gpt-3.5-turbo"
+    content: str,
+    detail_level: int,
+    force=False,
+    model="gpt-3.5-turbo",
+    thing_name="section",
 ):
     detail_request = {
         0: "Assume the reader has no grasp of the subject. Do not go into detail, simplify advanced terminology. ",
@@ -37,7 +41,7 @@ def summarise_latex(
         2: "Assume the reader has has a detailed understanding of the subject. Go into detail where necessary. ",
     }[detail_level]
 
-    prompt = f"Summarise the following section.{detail_request} Format your response using markdown syntax:"
+    prompt = f"Summarise the following {thing_name}.{detail_request} Format your response using markdown syntax:"
     temperature = 0.3
 
     cache_hash = sha1((prompt + content + str(temperature) + model).encode("utf8"))

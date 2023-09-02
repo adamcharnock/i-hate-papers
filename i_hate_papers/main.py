@@ -5,7 +5,10 @@ import platform
 import re
 from pathlib import Path
 
+from html2text import html2text
+
 from i_hate_papers.arxiv_utils import get_file_list, get_file_content
+from i_hate_papers.html_utils import process_html_content
 from i_hate_papers.latex_utils import process_latex_content
 from i_hate_papers.openai_utils import summarise_latex
 
@@ -22,7 +25,7 @@ def main():
     input_ = args.INPUT
 
     # Get the input file content, and some kind of file identifier
-    input_id, content = _get_input_content(
+    input_id, content_format, content = _get_input_content(
         input_=input_,
         no_input=args.no_input,
     )
@@ -30,6 +33,7 @@ def main():
     # Summarise it
     output_markdown = _summarise_content(
         content=content,
+        content_format=content_format,
         detail_level=args.detail_level,
         model=args.model,
     )
@@ -85,7 +89,7 @@ def _parse_args():
     )
     parser.add_argument(
         "--model",
-        default="gpt-3.5-turbo",
+        default="gpt-3.5-turbo-16k",
         help="What model to use to generate the summaries",
     )
     # TODO: No-cache parameter
@@ -104,18 +108,24 @@ def _setup_logging(verbosity):
     )
 
 
-def _get_input_content(input_: str, no_input: bool) -> tuple[str, str]:
-    # Get a list of source files for this paper from arXiv (or from a tex file)
+def _get_input_content(input_: str, no_input: bool) -> tuple[str, str, str]:
+    # Get a list of source files for this paper from arXiv (or from a tex or md file)
 
-    # If this isn't an arXiv then assume it is a path to a .tex file
+    # If this isn't an arXiv then assume it is a path to a file
     if not re.match(r"\d+\.\d+", input_):
         logger.debug(
-            f"Input '{input_}' isn't an arXiv ID. Assuming it is a latex file, will read from disk"
+            f"Input '{input_}' isn't an arXiv ID. Assuming it is a file, will read from disk"
         )
         path = Path(input_)
-        return path.stem, path.read_text(encoding="utf8")
 
-    # Ok, it is a paper ID
+        if path.suffix == ".html":
+            return path.stem, "html", path.read_text(encoding="utf8")
+        elif path.suffix == ".md":
+            return path.stem, "latex", path.read_text(encoding="utf8")
+        else:
+            raise Exception(f"Unknown file type: {path.suffix}")
+
+    # Ok, it is a arXiv paper ID
     arxiv_id = input_
 
     logger.debug(f"Getting input content from arXiv. {arxiv_id=} {no_input=}")
@@ -136,16 +146,24 @@ def _get_input_content(input_: str, no_input: bool) -> tuple[str, str]:
     # Return the file content
     file_name, _ = files[selected_file]
     logger.debug(f"Getting content for file {file_name}")
-    return arxiv_id, get_file_content(arxiv_id, file_name)
+    return arxiv_id, "latex", get_file_content(arxiv_id, file_name)
 
 
-def _summarise_content(content: str, detail_level: int, model: str) -> str:
+def _summarise_content(
+    content: str, content_format: str, detail_level: int, model: str
+) -> str:
     """Summarise the content using ChatGPT"""
     # Parse the tex content into sections
     logger.debug(
         f"Parsing {len(content):,}b of input content. {detail_level=}, {model=}"
     )
-    title, sections = process_latex_content(content)
+
+    if content_format == "latex":
+        title, sections = process_latex_content(content)
+    elif content_format == "html":
+        title, sections = process_html_content(content)
+    else:
+        raise Exception(f"Unknown content format: {content_format}")
 
     logger.debug(f"Found {len(content)} latex sections, document title: {title}")
 
