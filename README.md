@@ -34,8 +34,8 @@ Currently works with:
 
 # Example output
 
-* [Example Markdown](https://github.com/adamcharnock/i-hate-papers/blob/main/examples/summary-2106.09685-d1-gpt-3.5-turbo.md)
-* [Example HTML](https://adamcharnock.github.io/i-hate-papers/examples/summary-2106.09685-d1-gpt-3.5-turbo.html) (includes rendered math using MathJax)
+* [Example Markdown](https://github.com/adamcharnock/i-hate-papers/blob/main/examples/summary-2106.09685-d1-gpt-3.5-turbo-16k.md)
+* [Example HTML](https://adamcharnock.github.io/i-hate-papers/examples/summary-2106.09685-d1-gpt-3.5-turbo-16k.html) (includes rendered math using MathJax)
 
 # Reference
 
