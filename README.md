@@ -40,10 +40,10 @@ Currently works with:
 # Reference
 
     ❱ i_hate_papers --help
-    usage: i_hate_papers [-h] [--verbosity {0,1,2}] [--no-input] [--no-html] [--no-open] 
-                         [--detail-level {0,1,2}] [--model MODEL] INPUT
+    usage: i_hate_papers [-h] [--verbosity {0,1,2}] [--no-input] [--no-html] [--no-open] [--no-footer] 
+                         [--no-glossary] [--detail-level {0,1,2}] [--model MODEL] INPUT
     
-    Summarise an arXiv paper
+    Summarise an academic paper
     
     You must set the OPENAI_API_KEY environment variable using your OpenAi.com API key
     
@@ -56,6 +56,8 @@ Currently works with:
       --no-input            Don't prompt for file selection, just use the largest tex file
       --no-html             Skip HTML file generation
       --no-open             Don't open the HTML file when complete (macOS only)
+      --no-footer           Don't include a footer containing metadata
+      --no-glossary         Don't include a glossary
       --detail-level {0,1,2}
                             How detailed should the summary be? (0 = minimal detail, 1 = normal, 2 = more detail)
       --model MODEL         What model to use to generate the summaries

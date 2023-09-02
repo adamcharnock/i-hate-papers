@@ -1,11 +1,10 @@
 import argparse
+from datetime import datetime, timezone
 import logging
 import os
 import platform
 import re
 from pathlib import Path
-
-from html2text import html2text
 
 from i_hate_papers.arxiv_utils import get_file_list, get_file_content
 from i_hate_papers.html_utils import process_html_content
@@ -37,23 +36,33 @@ def main():
     )
 
     # Summarise it
-    output_markdown = _summarise_content(
-        title=title,
-        sections=sections,
-        detail_level=args.detail_level,
-        model=args.model,
+    output_markdown = (
+        _summarise_content(
+            title=title,
+            sections=sections,
+            detail_level=args.detail_level,
+            model=args.model,
+        )
+        + "\n\n"
     )
 
-    # Make a glossary from the summarised content
-    # TODO: The summarised content is sometimes not enough for the LLM to correctly
-    #       define a term. What would be better is to generate the list of words using
-    #       the summarised content, but then define the words using the original content.
-    #       However, the original content is often quite large, so passing that all at once to the
-    #       LLM may prove difficult without some intelligence.
-    output_markdown += _make_glossary(
-        content=output_markdown,
-        model=args.model,
-    )
+    if not args.no_glossary:
+        # Make a glossary from the summarised content
+        # TODO: The summarised content is sometimes not enough for the LLM to correctly
+        #       define a term. What would be better is to generate the list of words using
+        #       the summarised content, but then define the words using the original content.
+        #       However, the original content is often quite large, so passing that all at once to the
+        #       LLM may prove difficult without some intelligence.
+        output_markdown += (
+            _make_glossary(
+                content=output_markdown,
+                model=args.model,
+            )
+            + "\n\n"
+        )
+
+    if not args.no_footer:
+        output_markdown += _make_metadata_footer(args) + "\n\n"
 
     # Write the output
     file_name = f"summary-{input_id}-d{args.detail_level}-{args.model}"
@@ -68,7 +77,7 @@ def main():
 def _parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Summarise an arXiv paper\n\n"
+            "Summarise an academic paper\n\n"
             "You must set the OPENAI_API_KEY environment variable using your OpenAi.com API key"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
@@ -97,6 +106,16 @@ def _parse_args():
         "--no-open",
         action="store_true",
         help="Don't open the HTML file when complete (macOS only)",
+    )
+    parser.add_argument(
+        "--no-footer",
+        action="store_true",
+        help="Don't include a footer containing metadata",
+    )
+    parser.add_argument(
+        "--no-glossary",
+        action="store_true",
+        help="Don't include a glossary",
     )
     parser.add_argument(
         "--detail-level",
@@ -215,7 +234,7 @@ def _summarise_content(
 
     logger.debug(f"Summarising complete")
 
-    return output_markdown
+    return output_markdown.strip()
 
 
 def _make_glossary(content: str, model: str):
@@ -227,6 +246,22 @@ def _make_glossary(content: str, model: str):
         "## Glossary (Generated)\n\n"
         "This glossary has been generated based on the terminology used in the summarised content above.\n\n"
     ) + terms
+
+
+def _make_metadata_footer(args):
+    footer = "# About this summary\n\n"
+    footer += "| Argument | Value |\n"
+    footer += "| -- | -- |\n"
+
+    metadata = args._get_kwargs()
+
+    for name, value in metadata:
+        footer += f"| {name} | {value} |\n"
+    footer += "\n"
+
+    footer += f"Summary was created at `{datetime.now(timezone.utc).isoformat()}`\n\n"
+
+    return footer.strip()
 
 
 def _write_output(
@@ -248,7 +283,7 @@ def _write_output(
 
         html_path = Path(f"{file_name}.html")
         md = markdown.Markdown(
-            extensions=["mdx_math"],
+            extensions=["mdx_math", "tables"],
             extension_configs={"mdx_math": {"enable_dollar_delimiter": True}},
         )
         html_path.write_text(HTML % md.convert(output_markdown))
