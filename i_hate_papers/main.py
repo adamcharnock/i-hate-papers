@@ -10,7 +10,7 @@ from html2text import html2text
 from i_hate_papers.arxiv_utils import get_file_list, get_file_content
 from i_hate_papers.html_utils import process_html_content
 from i_hate_papers.latex_utils import process_latex_content
-from i_hate_papers.openai_utils import summarise_latex
+from i_hate_papers.openai_utils import summarise_latex, extract_glossary
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +30,22 @@ def main():
         no_input=args.no_input,
     )
 
-    # Summarise it
-    output_markdown = _summarise_content(
+    title, sections = _parse_input_content(
         content=content,
         content_format=content_format,
+    )
+
+    # Summarise it
+    output_markdown = _summarise_content(
+        title=title,
+        sections=sections,
         detail_level=args.detail_level,
+        model=args.model,
+    )
+
+    # Make a glossary from the summarised content
+    output_markdown += _make_glossary(
+        content=output_markdown,
         model=args.model,
     )
 
@@ -149,14 +160,11 @@ def _get_input_content(input_: str, no_input: bool) -> tuple[str, str, str]:
     return arxiv_id, "latex", get_file_content(arxiv_id, file_name)
 
 
-def _summarise_content(
-    content: str, content_format: str, detail_level: int, model: str
-) -> str:
-    """Summarise the content using ChatGPT"""
+def _parse_input_content(
+    content: str, content_format: str
+) -> tuple[str, dict[str, str]]:
     # Parse the tex content into sections
-    logger.debug(
-        f"Parsing {len(content):,}b of input content. {detail_level=}, {model=}"
-    )
+    logger.debug(f"Parsing {len(content):,}b of input content.")
 
     if content_format == "latex":
         title, sections = process_latex_content(content)
@@ -166,6 +174,16 @@ def _summarise_content(
         raise Exception(f"Unknown content format: {content_format}")
 
     logger.debug(f"Found {len(content)} latex sections, document title: {title}")
+
+    return title, sections
+
+
+def _summarise_content(
+    title: str, sections: dict[str, str], detail_level: int, model: str
+) -> str:
+    """Summarise the content using ChatGPT"""
+
+    logger.debug(f"Summarising {len(sections)} sections. {detail_level=}, {model=}")
 
     # Document title
     output_markdown = f"# {title}\n\n"
@@ -187,6 +205,17 @@ def _summarise_content(
     logger.debug(f"Summarising complete")
 
     return output_markdown
+
+
+def _make_glossary(content: str, model: str):
+    """Generate a glossary as markdown"""
+    logger.info(f"Creating glossary")
+    terms = extract_glossary(content, model=model)
+
+    return (
+        "## Glossary (Generated)\n\n"
+        "This glossary has been generated based on the terminology used in the summarised content above.\n\n"
+    ) + terms
 
 
 def _write_output(

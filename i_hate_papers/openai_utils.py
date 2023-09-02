@@ -17,7 +17,6 @@ def openai_request(question, text, temperature, model):
             {"role": "user", "content": f"""{question}:\n\n{text}"""}
         ],
         temperature=temperature,
-        max_tokens=256,
         top_p=1.0,
         frequency_penalty=0.2,
         presence_penalty=0.0,
@@ -33,7 +32,6 @@ def summarise_latex(
     detail_level: int,
     force=False,
     model="gpt-3.5-turbo",
-    thing_name="section",
 ):
     detail_request = {
         0: "Assume the reader has no grasp of the subject. Do not go into detail, simplify advanced terminology. ",
@@ -41,7 +39,11 @@ def summarise_latex(
         2: "Assume the reader has has a detailed understanding of the subject. Go into detail where necessary. ",
     }[detail_level]
 
-    prompt = f"Summarise the following {thing_name}.{detail_request} Format your response using markdown syntax:"
+    prompt = (
+        f"Summarise the following section. "
+        f"{detail_request} "
+        f"Format your response using markdown syntax:"
+    )
     temperature = 0.3
 
     cache_hash = sha1((prompt + content + str(temperature) + model).encode("utf8"))
@@ -63,3 +65,42 @@ def summarise_latex(
     )
     cache_path.write_text(response, "utf8")
     return response
+
+
+def extract_glossary(
+    content: str,
+    force=False,
+    model="gpt-3.5-turbo",
+):
+    """Extract a glossary from the given content"""
+    prompt = (
+        f"Create a long & comprehensive glossary of unusual terminology given the following markdown-formatted content. "
+        f"Format results using markdown. Terms must be bold, term definitions must not be bold. "
+        f"Term definitions must be a single line. "
+        f"Do not include any introductory text or headings."
+    )
+    temperature = 0
+
+    cache_hash = sha1((prompt + content + str(temperature) + model).encode("utf8"))
+    cache_path = CACHE_DIR / "key-terms" / cache_hash.hexdigest()
+    cache_path.parent.mkdir(exist_ok=True, parents=True)
+
+    if cache_path.exists() and not force:
+        logger.debug(f"Key terms found in cache: {cache_path}")
+        markdown = cache_path.read_text("utf8")
+    else:
+        logger.debug(
+            f"Key terms not found in cache. Will summarise and store in cache at: {cache_path}"
+        )
+        response = openai_request(
+            prompt,
+            content,
+            temperature=temperature,
+            model=model,
+        )
+        cache_path.write_text(response, "utf8")
+        markdown = response
+
+    lines = [m for m in markdown.splitlines() if m.strip() and not m.startswith("#")]
+    sorted(lines)
+    return "\n\n".join(lines)

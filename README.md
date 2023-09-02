@@ -7,6 +7,12 @@ In these cases the technical depth of a paper can be a major obstacle.
 So I created I Hate Papers to create easily digestible versions of 
 academic research.
 
+Currently works with:
+
+* An arXiv paper ID
+* A local `.tex` file
+* A local `.html` file (experimental)
+
 # Installation
 
     pip install i-hate-papers
@@ -21,6 +27,9 @@ academic research.
     
     # Summarise a latex file
     ❱ i_hate_papers path/to/some-paper.tex
+    
+    # Summarise a html file
+    ❱ i_hate_papers path/to/some-paper.html
 
 # Example output
 
@@ -38,7 +47,7 @@ academic research.
     You must set the OPENAI_API_KEY environment variable using your OpenAi.com API key
     
     positional arguments:
-      INPUT                 arXiv paper ID (example: 1234.56789) or path to a .tex file
+      INPUT                 arXiv paper ID (example: 1234.56789), or path to a .tex or .html file
     
     options:
       -h, --help            show this help message and exit
