@@ -45,6 +45,11 @@ def main():
     )
 
     # Make a glossary from the summarised content
+    # TODO: The summarised content is sometimes not enough for the LLM to correctly
+    #       define a term. What would be better is to generate the list of words using
+    #       the summarised content, but then define the words using the original content.
+    #       However, the original content is often quite large, so passing that all at once to the
+    #       LLM may prove difficult without some intelligence.
     output_markdown += _make_glossary(
         content=output_markdown,
         model=args.model,
