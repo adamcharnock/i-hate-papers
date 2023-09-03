@@ -1,11 +1,16 @@
 [tool.poetry]
 name = "i-hate-papers"
 version = "0.2.0"
-description = ""
+description = "Create easily readable versions of academic papers via OpenAI"
 authors = ["Adam Charnock <adam@adamcharnock.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "i_hate_papers"}]
+homepage = "https://github.com/adamcharnock/i-hate-papers"
+classifiers = [
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing"
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"

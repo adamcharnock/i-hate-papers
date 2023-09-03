@@ -68,6 +68,7 @@ For internal use:
 
     export VERSION=0.1.1
     poetry version $VERSION
+    git ci -a -m "Releasing version $VERSION"
     git tag "v$VERSION"
-    git push origin  refs/tags/v$VERSION
+    git push origin main refs/tags/v$VERSION
     poetry publish --build
